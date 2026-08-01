@@ -1,0 +1,63 @@
+{
+  "window.zoomLevel": 1,
+  "workbench.startupEditor": "none",
+  "workbench.colorTheme": "OM Theme (Default Dracula Italic)",
+  "workbench.iconTheme": "material-icon-theme",
+  "explorer.compactFolders": false,
+  "editor.fontSize": 14,
+  "editor.fontFamily": "'Fira Code', Consolas, 'Source Code Pro', monospace",
+  "editor.fontLigatures": true,
+  "editor.rulers": [88, 120],
+  "editor.formatOnSave": true,
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "terminal.integrated.fontSize": 13,
+  "python.analysis.typeCheckingMode": "basic",
+  "python.analysis.autoImportCompletions": true,
+  "python.analysis.diagnosticSeverityOverrides": {
+    "reportMissingTypeStubs": "none",
+    "reportUnknownMemberType": "none",
+    "reportUnknownArgumentType": "none",
+    "reportUnknownVariableType": "none",
+    "reportUnknownLambdaType": "none",
+    "reportUnknownParameterType": "none"
+  },
+  "python.testing.pytestEnabled": true,
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestArgs": ["."],
+  "python.terminal.activateEnvironment": true,
+  "python.envFile": "${workspaceFolder}/.env",
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports.ruff": "always",
+      "source.fixAll.ruff": "always"
+    }
+  },
+  "ruff.nativeServer": "on",
+  "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/*.pyc": true
+  },
+  "search.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true
+  },
+  "files.associations": {
+    "*.html": "django-html"
+  },
+  "emmet.includeLanguages": {
+    "django-html": "html"
+  },
+  "flake8.args": [
+    "--ignore=E501",
+    "--exclude=.git,__pycache__,venv,.venv,migrations,node_modules"
+  ],
+  "python-envs.defaultEnvManager": "ms-python.python:poetry",
+  "python-envs.defaultPackageManager": "ms-python.python:poetry"
+}
