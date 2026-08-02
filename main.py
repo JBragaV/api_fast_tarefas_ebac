@@ -186,10 +186,7 @@ def list_tarefas(
             detail="Page ou limit com valores inválidos",
         )
 
-    # qtd_tarefas = session.scalar(select(func.count(TarefaORM.id))) or 0
-    qtd_tarefas = (
-        session.query(func.count(TarefaORM.id)) or 0
-    )  # Documentação https://docs.sqlalchemy.org/en/20/orm/queryguide/query.html#sqlalchemy.orm.Query.count
+    qtd_tarefas = session.scalar(select(func.count()).select_from(TarefaORM)) or 0
 
     if qtd_tarefas == 0:
         raise HTTPException(

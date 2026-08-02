@@ -224,3 +224,4 @@ pyrightconfig.json
 # Local excluisions
 comandos.txt
 *.db
+README_EX.MD
