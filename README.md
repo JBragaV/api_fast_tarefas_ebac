@@ -10,7 +10,7 @@
 
 Projeto de estudo desenvolvido durante o curso de Backend da EBAC, com o
 objetivo de praticar a construção de uma API REST utilizando FastAPI,
-SQLAlchemy (assíncrono) e SQLite, seguindo uma organização de pastas
+SQLAlchemy e SQLite, seguindo uma organização de pastas
 inspirada em boas práticas de arquitetura.
 
 ## ✨ Funcionalidades
