@@ -6,6 +6,7 @@ from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from pydantic import BaseModel, ConfigDict, Field, field_validator
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.database.models.base import Base
@@ -31,6 +32,7 @@ def autenticar_usuario(credencial: Annotated[HTTPBasicCredentials, Depends(secur
         )
 
 
+# Variaveis globais
 # Depêndencias
 SessaoBanco = Annotated[Session, Depends(get_session)]
 UsuarioAutenticacao = Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)]
@@ -124,11 +126,6 @@ class ErroResposta(BaseModel):
     detail: str
 
 
-# Variaveis globais
-tarefas: dict[int, TarefaCriar] = {}
-# "nome", "descrição" e "concluída" (inicialmente como False).
-
-
 # valiadações
 def pagina_e_limite_sao_validos(page: int, limit: int) -> bool:
     return page >= 1 and limit >= 1
@@ -172,12 +169,13 @@ def add_tarefa(
     response_model=ListaTarefasResposta,
     response_description="Lista das tarefas cadastradas",
     responses={
-        404: {"model": ErroResposta, "desciption": "Nenhuma tarefa foi cadastrada"}
+        404: {"model": ErroResposta, "description": "Nenhuma tarefa foi cadastrada"}
     },
     tags=["Tarefa"],
 )
 def list_tarefas(
-    _: Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)],
+    session: SessaoBanco,
+    _: UsuarioAutenticacao,
     page: int = 1,
     limit: int = 10,
     ordenacao: str | None = None,
@@ -187,30 +185,32 @@ def list_tarefas(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Page ou limit com valores inválidos",
         )
-    if not tarefas:
-        # if not len(tarefas):
+
+    # qtd_tarefas = session.scalar(select(func.count(TarefaORM.id))) or 0
+    qtd_tarefas = (
+        session.query(func.count(TarefaORM.id)) or 0
+    )  # Documentação https://docs.sqlalchemy.org/en/20/orm/queryguide/query.html#sqlalchemy.orm.Query.count
+
+    if qtd_tarefas == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Nenhuma tarefa foi cadastrada ainda!!!",
         )
-    tarefas_ordenadas = {}
+    query = select(TarefaORM)
     if ordenacao:
         if ordenacao.lower() == "nome":
-            tarefas_ordenadas = dict(sorted(tarefas.items(), key=lambda x: x[1].nome))  # type: ignore
+            print("NOME")
+            query = query.order_by(TarefaORM.nome)
         elif ordenacao.lower() == "descricao":
-            tarefas_ordenadas = dict(
-                sorted(tarefas.items(), key=lambda x: x[1].descricao)  # type: ignore
-            )
-    else:
-        tarefas_ordenadas = tarefas
-    start_page = (page - 1) * limit
-    end_page = start_page + limit
+            query = query.order_by(TarefaORM.descricao)
+    start = (page - 1) * limit
+    query = query.offset(start).limit(limit)
+
     tarfas_lista = [
-        TarefaResposta(id=i, **v.model_dump())
-        for i, v in list(tarefas_ordenadas.items())
-    ][start_page:end_page]
+        TarefaResposta.model_validate(t) for t in list(session.scalars(query).all())
+    ]
     return ListaTarefasResposta(
-        page=page, limit=limit, tamanho=len(tarefas_ordenadas), tarefas=tarfas_lista
+        page=page, limit=limit, tamanho=qtd_tarefas, tarefas=tarfas_lista
     )
 
 
@@ -229,17 +229,20 @@ def list_tarefas(
 )
 def put_tarefa_concluida(
     id_tarefa: int,
-    credencial: Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)],
+    session: SessaoBanco,
+    _: UsuarioAutenticacao,
 ) -> TarefaResposta:
-    tarefa = tarefas.get(id_tarefa, None)
+    tarefa = session.get(TarefaORM, id_tarefa)
     if not tarefa:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Não foi possível achar a tarefa com o id {id_tarefa}",
         )
-    tarefa_concluida = tarefa.model_copy(update={"concluida": not tarefa.concluida})
-    tarefas[id_tarefa] = tarefa_concluida
-    return TarefaResposta(id=id_tarefa, **tarefa_concluida.model_dump())
+
+    tarefa.concluida = not tarefa.concluida
+    session.flush()
+    session.refresh(tarefa)
+    return TarefaResposta.model_validate(tarefa)
 
 
 @app.put(
@@ -258,22 +261,23 @@ def put_tarefa_concluida(
 def put_tarefa_dados(
     id_tarefa: int,
     tarefa_dados: TarefaAtualizar,
-    credencial: Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)],
+    session: SessaoBanco,
+    _: UsuarioAutenticacao,
 ) -> TarefaResposta:
-    tarefa = tarefas.get(id_tarefa)
+    tarefa = session.get(TarefaORM, id_tarefa)
     if not tarefa:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Não foi possível achar a tarefa com o id {id_tarefa}",
         )
 
-    tarefa_atualizada = TarefaCriar(
-        nome=tarefa_dados.nome,
-        descricao=tarefa_dados.descricao,
-        concluida=tarefa.concluida,
-    )
-    tarefas[id_tarefa] = tarefa_atualizada
-    return TarefaResposta(id=id_tarefa, **tarefa_atualizada.model_dump())
+    tarefa.nome = tarefa_dados.nome
+    tarefa.descricao = tarefa_dados.descricao
+
+    session.flush()
+    session.refresh(tarefa)
+
+    return TarefaResposta.model_validate(tarefa)
 
 
 @app.delete(
@@ -291,12 +295,15 @@ def put_tarefa_dados(
 )
 def delete_tarefa(
     id_tarefa: int,
-    credencial: Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)],
+    session: SessaoBanco,
+    _: UsuarioAutenticacao,
 ) -> MensagemResposta:
-    tarefa = tarefas.get(id_tarefa, None)
+    tarefa = session.get(TarefaORM, id_tarefa)
     if not tarefa:
         raise HTTPException(
-            status_code=404, detail=f"Tarefa com o id {id_tarefa} não foi encontrado!!!"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Tarefa com o id {id_tarefa} não foi encontrada!!!",
         )
-    del tarefas[id_tarefa]
-    return MensagemResposta(message=f"{tarefa.nome} apagada com suecesso!!!")
+    nome = tarefa.nome
+    session.delete(tarefa)
+    return MensagemResposta(message=f"{nome} apagada com sucesso!!!")

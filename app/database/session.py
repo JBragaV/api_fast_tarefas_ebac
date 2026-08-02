@@ -15,7 +15,6 @@ def get_session():
     with SessionLocal() as session:
         try:
             yield session
-            print("O commit vai rolar agora aqui")
             session.commit()
         except Exception:
             session.rollback()
