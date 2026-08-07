@@ -1,6 +1,6 @@
 [project]
 name = "tarfas-estudos"
-version = "0.1.0"
+version = "0.2.0"
 description = "Uma API com FastAPI de estudos do curso de Backend Ebac."
 authors = [
     {name = "JBragaV",email = "jocimarcaiadobraga@gmail.com"}

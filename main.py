@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import secrets
 from typing import Annotated
 
@@ -40,13 +41,13 @@ UsuarioAutenticacao = Annotated[HTTPBasicCredentials, Depends(autenticar_usuario
 # Inicialização da API
 app = FastAPI(
     title="API de Tarefas",
-    description="API para gerenciamento de tarefas em memória.",
-    version="0.1.0",
+    description="API para gerenciamento de tarefas.",
+    version="0.2.0",
     contact={"nome": "Jocimar Braga", "email": "jocimarcaiadobraga@gmail.com"},
 )
 
-usuario = "jocimar"
-senha = "jocimar"
+usuario = os.getenv("USUARIO") or ""
+senha = os.getenv("SENHA") or ""
 
 
 # Classes de validações
