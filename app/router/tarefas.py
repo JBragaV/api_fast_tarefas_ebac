@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBasicCredentials
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,11 +22,15 @@ from app.utils.utils import pagina_e_limite_sao_validos
 type SessaoBanco = Annotated[AsyncSession, Depends(get_session)]
 type UsuarioAutenticacao = Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)]
 
-router = Router
+
+router = APIRouter(
+    prefix="/tarefa",
+    tags=["Tarefa"],
+)
 
 
 @router.post(
-    "/tarefa/",
+    "/add/",
     response_model=TarefaResposta,
     summary="Cria uma tarefa nos registros",
     status_code=status.HTTP_201_CREATED,
@@ -47,7 +51,7 @@ async def add_tarefa(
 
 
 @router.get(
-    "/tarefas/",
+    "/",
     summary="Listar todas as tarefas",
     response_model=ListaTarefasResposta,
     response_description="Lista das tarefas cadastradas",
@@ -93,7 +97,7 @@ async def list_tarefas(
 
 
 @router.put(
-    "/tarefa/concluida/{id_tarefa}/",
+    "/atualizar/concluida/{id_tarefa}/",
     summary="Altera o estado de conclusão",
     response_model=TarefaResposta,
     response_description="Tarefa Atualizada",
@@ -124,7 +128,7 @@ async def put_tarefa_concluida(
 
 
 @router.put(
-    "/tarefa/dados/{id_tarefa}/",
+    "/atualizar/dados/{id_tarefa}/",
     summary="Altera as informações da tarefa",
     response_model=TarefaResposta,
     response_description="Dados da tarefa atualizados.",
@@ -159,7 +163,7 @@ async def put_tarefa_dados(
 
 
 @router.delete(
-    "/tarefa/{id_tarefa}/",
+    "/delete/{id_tarefa}/",
     summary="Apaga uma tarefa pelo ID",
     response_model=MensagemResposta,
     response_description="Confirmação da exclusão",

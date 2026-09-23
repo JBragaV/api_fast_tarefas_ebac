@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from app.database.models.base import Base
 from app.database.schemas.respostas_schema import MensagemResposta
 from app.database.session import engine
-from app.router import tarefas
+from app.router import tarefas, usuarios
 
 
 @asynccontextmanager
@@ -31,8 +31,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(tarefas.router)
-
-# valiadações
+app.include_router(usuarios.router)
 
 
 # Rotas
