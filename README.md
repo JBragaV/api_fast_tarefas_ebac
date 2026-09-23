@@ -74,6 +74,7 @@ Escolha uma das opções abaixo:
 ```bash
 # Clone o repositório
 git clone https://github.com/JBragaV/api_fast_tarefas_ebac.git
+git clone https://github.com/JBragaV/api_fast_tarefas_ebac.gitk
 cd pasta_projeto
 
 # Copie o arquivo de variáveis de ambiente de exemplo
