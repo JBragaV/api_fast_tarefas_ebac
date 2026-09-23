@@ -10,10 +10,21 @@ dependencies = [
     "sqlalchemy (>=2.0.51,<3.0.0)",
     "aiosqlite (>=0.22.1,<0.23.0)",
     "fastapi[standard] (>=0.141.1,<0.142.0)",
-    "uvicorn (>=0.52.0,<0.53.0)"
+    "uvicorn (>=0.52.0,<0.53.0)",
+    "aiokafka (>=0.14.0,<0.15.0)",
+    "redis (>=6.4,<6.5)",
+    "celery[redis] (>=5.6.3,<6.0.0)"
 ]
-
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.fastapi]
+entrypoint = "app.main:app"
+
+[dependency-groups]
+dev = [
+    "pytest-cov (>=7.1.0,<8.0.0)",
+    "pytest (>=9.1.1,<10.0.0)"
+]

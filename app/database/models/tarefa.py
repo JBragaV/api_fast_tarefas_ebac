@@ -8,7 +8,7 @@ from .base import Base
 
 # Tabela do banco de dados (SQLite) com suas colunas
 class Tarefa(Base):
-    __tablename__ = "tarefass"
+    __tablename__ = "tarefas"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     nome: Mapped[str] = mapped_column(String(50), index=True, nullable=False)
