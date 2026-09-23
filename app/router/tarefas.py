@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-<<<<<<< HEAD:app/router/tarefas.py
-=======
-import os
-import secrets
->>>>>>> 735e37f69baad33abd77460b6314e23051fa00ca:main.py
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasicCredentials
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,46 +22,8 @@ from app.utils.utils import pagina_e_limite_sao_validos
 type SessaoBanco = Annotated[AsyncSession, Depends(get_session)]
 type UsuarioAutenticacao = Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)]
 
+router = Router
 
-<<<<<<< HEAD:app/router/tarefas.py
-router = APIRouter(
-    prefix="/tarefas",
-    tags=["Tarefas"],
-)
-
-=======
-# Segurança e autenticação API
-# Básica
-security = HTTPBasic()
-
-
-def autenticar_usuario(credencial: Annotated[HTTPBasicCredentials, Depends(security)]):
-    is_username_correct = secrets.compare_digest(credencial.username, usuario)
-    is_password_correct = secrets.compare_digest(credencial.password, senha)
-    if not (is_username_correct and is_password_correct):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuário ou senha incorretos",
-            headers={"WWW-Authenticate": "Basic"},
-        )
-
-
-# Variaveis globais
-# Depêndencias
-SessaoBanco = Annotated[Session, Depends(get_session)]
-UsuarioAutenticacao = Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)]
-
-# Inicialização da API
-app = FastAPI(
-    title="API de Tarefas",
-    description="API para gerenciamento de tarefas.",
-    version="0.2.0",
-    contact={"nome": "Jocimar Braga", "email": "jocimarcaiadobraga@gmail.com"},
-)
-
-usuario = os.getenv("USUARIO") or ""
-senha = os.getenv("SENHA") or ""
->>>>>>> 735e37f69baad33abd77460b6314e23051fa00ca:main.py
 
 @router.post(
     "/tarefa/",
