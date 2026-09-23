@@ -33,17 +33,37 @@ inspirada em boas práticas de arquitetura.
 ```
 PROJETO/
 ├── app/
+│   ├── auth/
+│   │   ├── __init__.py
+│   │   └── auth_usuarios.py
 │   ├── core/
 │   │   ├── __init__.py
 │   │   └── configs.py        # Configurações do sistema (ex.: URL do banco)
-│   └── database/
-│       ├── models/
-│       │   ├── __init__.py
-│       │   ├── base.py
-│       │   └── tarefa.py
-│       ├── __init__.py
-│       └── session.py
-├── main.py
+│   ├── database/
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py
+│   │   │   ├── lembretes.py
+│   │   │   ├── tarefa.py
+│   │   │   └── usuario.py
+│   │   ├── schemas/
+│   │   │   ├── __init__.py
+│   │   │   ├── base_schema.py
+│   │   │   ├── respostas_schema.py
+│   │   │   ├── tarefa_schema.py
+│   │   │   └── usuario_schema.py
+│   │   ├── __init__.py
+│   │   └── session.py
+│   ├── router
+│   │   ├── __init__.py
+│   │   ├── tarefas.py
+│   │   └── usuarios.py
+│   ├── tests
+│   │   ├── __init__.py
+│   ├── utils
+│   │   ├── __init__.py
+│   │   └── utils.py
+│   └── main.py
 ├── poetry.lock
 ├── pyproject.toml
 └── README.md

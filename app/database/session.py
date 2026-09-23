@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core import SysConfig
 
 DATABASE_URL = SysConfig.DATABASE_URL
 
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-SessionLocal = sessionmaker(autoflush=False, bind=engine)
+engine = create_async_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = async_sessionmaker(autoflush=False, bind=engine, class_=AsyncSession)
 
 
-def get_session():
-    with SessionLocal() as session:
+async def get_session():
+    async with SessionLocal() as session:
         try:
             yield session
-            session.commit()
+            await session.commit()
         except Exception:
-            session.rollback()
+            await session.rollback()
             raise

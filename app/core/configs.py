@@ -7,4 +7,4 @@ class SysConfig:
     No futuro será intalado o dotenv e será criado o arquivo .env (Não feito)
     """
 
-    DATABASE_URL = "sqlite:///livraria_ebac.db"
+    DATABASE_URL = "sqlite+aiosqlite:///./livraria_ebac.db"

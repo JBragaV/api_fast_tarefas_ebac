@@ -1,0 +1,12 @@
+## Road Map do projeto.
+- [ ] Implementar tudo que foi aprendido no curso nessa api.
+    - [ ] Redis (Instalado)
+    - [ ] Celery (Instalado)
+    - [ ] Kafka (Instalado)
+    - [ ] Rotas Assincronas
+    - [ ] Testes
+        - [ ] PyTest (Instalado)
+        - [ ] PyTest Cov (Instalado)
+- [ ] Criar rotas em um arquivo separado
+    - [X] Tarefas
+    - [ ] Usuarios

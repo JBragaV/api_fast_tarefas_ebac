@@ -1,148 +1,35 @@
 from __future__ import annotations
 
-import secrets
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, status
-from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPBasicCredentials
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.models.base import Base
+from app.auth.auth_usuarios import autenticar_usuario
 from app.database.models.tarefa import Tarefa as TarefaORM
-from app.database.session import engine, get_session
+from app.database.schemas.respostas_schema import ErroResposta, MensagemResposta
+from app.database.schemas.tarefa_schema import (
+    ListaTarefasResposta,
+    TarefaAtualizar,
+    TarefaCriar,
+    TarefaResposta,
+)
+from app.database.session import get_session
+from app.utils.utils import pagina_e_limite_sao_validos
 
-Base.metadata.create_all(bind=engine)
-
-
-# Segurança e autenticação API
-# Básica
-security = HTTPBasic()
-
-
-def autenticar_usuario(credencial: Annotated[HTTPBasicCredentials, Depends(security)]):
-    is_username_correct = secrets.compare_digest(credencial.username, usuario)
-    is_password_correct = secrets.compare_digest(credencial.password, senha)
-    if not (is_username_correct and is_password_correct):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Usuário ou senha incorretos",
-            headers={"WWW-Authenticate": "Basic"},
-        )
+type SessaoBanco = Annotated[AsyncSession, Depends(get_session)]
+type UsuarioAutenticacao = Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)]
 
 
-# Variaveis globais
-# Depêndencias
-SessaoBanco = Annotated[Session, Depends(get_session)]
-UsuarioAutenticacao = Annotated[HTTPBasicCredentials, Depends(autenticar_usuario)]
-
-# Inicialização da API
-app = FastAPI(
-    title="API de Tarefas",
-    description="API para gerenciamento de tarefas em memória.",
-    version="0.1.0",
-    contact={"nome": "Jocimar Braga", "email": "jocimarcaiadobraga@gmail.com"},
+router = APIRouter(
+    prefix="/tarefas",
+    tags=["Tarefas"],
 )
 
-usuario = "jocimar"
-senha = "jocimar"
 
-
-# Classes de validações
-class Usuario(BaseModel):
-    usuario: str
-    senha: str
-
-
-class TarefaBase(BaseModel):
-    nome: str = Field(
-        min_length=1,
-        examples=["Estudar FastAPI"],
-        description="Nome da tarefa.",
-    )
-
-    descricao: str = Field(
-        min_length=1,
-        examples=["Estudar modelos de resposta e tratamento de erros."],
-        description="Descrição detalhada da tarefa.",
-    )
-
-    @field_validator("nome")
-    @classmethod
-    def validar_nome(cls, valor: str) -> str:
-        valor = valor.strip()
-
-        if not valor:
-            raise ValueError("A tarefa deve ter um título.")
-
-        return valor
-
-    @field_validator("descricao")
-    @classmethod
-    def validar_descricao(cls, valor: str) -> str:
-        valor = valor.strip()
-
-        if not valor:
-            raise ValueError("A tarefa deve ter uma descrição.")
-
-        return valor
-
-
-class TarefaCriar(TarefaBase):
-    concluida: bool = Field(
-        default=False,
-        description="Indica se a tarefa foi concluída.",
-    )
-
-
-class TarefaAtualizar(TarefaBase):
-    """
-    Modelo utilizado para atualizar somente nome e descrição.
-
-    O estado 'concluida' não é recebido nesse endpoint.
-    """
-
-
-class TarefaResposta(TarefaCriar):
-    model_config = ConfigDict(from_attributes=True)
-    id: int = Field(
-        description="Identificador único da tarefa.",
-    )
-
-
-class ListaTarefasResposta(BaseModel):
-    page: int
-    limit: int
-    tamanho: int
-    tarefas: list[TarefaResposta]
-
-
-class MensagemResposta(BaseModel):
-    message: str
-
-
-class ErroResposta(BaseModel):
-    detail: str
-
-
-# valiadações
-def pagina_e_limite_sao_validos(page: int, limit: int) -> bool:
-    return page >= 1 and limit >= 1
-
-
-# Rotas
-@app.get(
-    "/",
-    response_model=MensagemResposta,
-    summary="Verifica o funcionamento da API",
-    tags=["Sistema"],
-)
-def boas_vindas() -> MensagemResposta:
-    return MensagemResposta(message="Hello Ebac")
-
-
-@app.post(
+@router.post(
     "/tarefa/",
     response_model=TarefaResposta,
     summary="Cria uma tarefa nos registros",
@@ -150,20 +37,20 @@ def boas_vindas() -> MensagemResposta:
     response_description="Tarefa criada com suecesso",
     tags=["Tarefa"],
 )
-def add_tarefa(
+async def add_tarefa(
     tarefa_nova: TarefaCriar,
     session: SessaoBanco,
     _: UsuarioAutenticacao,
 ) -> TarefaResposta:
     tarefa = TarefaORM(**tarefa_nova.model_dump())
     session.add(tarefa)
-    session.flush()
-    session.refresh(tarefa)
+    await session.flush()
+    await session.refresh(tarefa)
 
     return TarefaResposta.model_validate(tarefa)
 
 
-@app.get(
+@router.get(
     "/tarefas/",
     summary="Listar todas as tarefas",
     response_model=ListaTarefasResposta,
@@ -173,7 +60,7 @@ def add_tarefa(
     },
     tags=["Tarefa"],
 )
-def list_tarefas(
+async def list_tarefas(
     session: SessaoBanco,
     _: UsuarioAutenticacao,
     page: int = 1,
@@ -186,7 +73,7 @@ def list_tarefas(
             detail="Page ou limit com valores inválidos",
         )
 
-    qtd_tarefas = session.scalar(select(func.count()).select_from(TarefaORM)) or 0
+    qtd_tarefas = await session.scalar(select(func.count()).select_from(TarefaORM)) or 0
 
     if qtd_tarefas == 0:
         raise HTTPException(
@@ -202,16 +89,14 @@ def list_tarefas(
             query = query.order_by(TarefaORM.descricao)
     start = (page - 1) * limit
     query = query.offset(start).limit(limit)
-
-    tarfas_lista = [
-        TarefaResposta.model_validate(t) for t in list(session.scalars(query).all())
-    ]
+    resultado = await session.scalars(query)
+    tarfas_lista = [TarefaResposta.model_validate(t) for t in list(resultado.all())]
     return ListaTarefasResposta(
         page=page, limit=limit, tamanho=qtd_tarefas, tarefas=tarfas_lista
     )
 
 
-@app.put(
+@router.put(
     "/tarefa/concluida/{id_tarefa}/",
     summary="Altera o estado de conclusão",
     response_model=TarefaResposta,
@@ -224,12 +109,12 @@ def list_tarefas(
     },
     tags=["Tarefa"],
 )
-def put_tarefa_concluida(
+async def put_tarefa_concluida(
     id_tarefa: int,
     session: SessaoBanco,
     _: UsuarioAutenticacao,
 ) -> TarefaResposta:
-    tarefa = session.get(TarefaORM, id_tarefa)
+    tarefa = await session.get(TarefaORM, id_tarefa)
     if not tarefa:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -237,12 +122,12 @@ def put_tarefa_concluida(
         )
 
     tarefa.concluida = not tarefa.concluida
-    session.flush()
-    session.refresh(tarefa)
+    await session.flush()
+    await session.refresh(tarefa)
     return TarefaResposta.model_validate(tarefa)
 
 
-@app.put(
+@router.put(
     "/tarefa/dados/{id_tarefa}/",
     summary="Altera as informações da tarefa",
     response_model=TarefaResposta,
@@ -255,13 +140,13 @@ def put_tarefa_concluida(
     },
     tags=["Tarefa"],
 )
-def put_tarefa_dados(
+async def put_tarefa_dados(
     id_tarefa: int,
     tarefa_dados: TarefaAtualizar,
     session: SessaoBanco,
     _: UsuarioAutenticacao,
 ) -> TarefaResposta:
-    tarefa = session.get(TarefaORM, id_tarefa)
+    tarefa = await session.get(TarefaORM, id_tarefa)
     if not tarefa:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -271,13 +156,13 @@ def put_tarefa_dados(
     tarefa.nome = tarefa_dados.nome
     tarefa.descricao = tarefa_dados.descricao
 
-    session.flush()
-    session.refresh(tarefa)
+    await session.flush()
+    await session.refresh(tarefa)
 
     return TarefaResposta.model_validate(tarefa)
 
 
-@app.delete(
+@router.delete(
     "/tarefa/{id_tarefa}/",
     summary="Apaga uma tarefa pelo ID",
     response_model=MensagemResposta,
@@ -290,17 +175,17 @@ def put_tarefa_dados(
     },
     tags=["Tarefa"],
 )
-def delete_tarefa(
+async def delete_tarefa(
     id_tarefa: int,
     session: SessaoBanco,
     _: UsuarioAutenticacao,
 ) -> MensagemResposta:
-    tarefa = session.get(TarefaORM, id_tarefa)
+    tarefa = await session.get(TarefaORM, id_tarefa)
     if not tarefa:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tarefa com o id {id_tarefa} não foi encontrada!!!",
         )
     nome = tarefa.nome
-    session.delete(tarefa)
+    await session.delete(tarefa)
     return MensagemResposta(message=f"{nome} apagada com sucesso!!!")
