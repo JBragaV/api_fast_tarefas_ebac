@@ -8,3 +8,4 @@ class SysConfig:
     """
 
     DATABASE_URL = "sqlite+aiosqlite:///./livraria_ebac.db"
+    DEBUG = True

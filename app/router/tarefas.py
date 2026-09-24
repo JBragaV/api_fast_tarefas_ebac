@@ -44,7 +44,7 @@ async def add_tarefa(
 ) -> TarefaResposta:
     tarefa = TarefaORM(**tarefa_nova.model_dump())
     session.add(tarefa)
-    await session.flush()
+    await session.commit()
     await session.refresh(tarefa)
 
     return TarefaResposta.model_validate(tarefa)

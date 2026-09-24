@@ -1,6 +1,6 @@
 from pydantic import ConfigDict, Field, field_validator
 
-from .base_shcema import Base
+from .base_schema import Base
 
 
 class TarefaBase(Base):

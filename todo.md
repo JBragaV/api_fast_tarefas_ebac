@@ -4,6 +4,18 @@
     - [ ] Celery (Instalado)
     - [ ] Kafka (Instalado)
     - [ ] Rotas Assincronas
+            - [X] Tarefa
+                - [X] Post
+                - [X] Get All
+                - [X] Get one
+                - [X] Put
+                - [X] Delete
+            - [ ] Usuário
+                - [X] Post
+                - [X] Get All
+                - [ ] Get one
+                - [ ] Put
+                - [ ] Delete
     - [ ] Testes
         - [ ] PyTest (Instalado)
         - [ ] PyTest Cov (Instalado)

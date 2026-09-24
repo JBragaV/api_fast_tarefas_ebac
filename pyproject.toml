@@ -13,7 +13,8 @@ dependencies = [
     "uvicorn (>=0.52.0,<0.53.0)",
     "aiokafka (>=0.14.0,<0.15.0)",
     "redis (>=6.4,<6.5)",
-    "celery[redis] (>=5.6.3,<6.0.0)"
+    "celery[redis] (>=5.6.3,<6.0.0)",
+    "passlib[argon2] (>=1.7.4,<2.0.0)",
 ]
 
 [build-system]

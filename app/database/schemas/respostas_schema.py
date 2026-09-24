@@ -1,4 +1,4 @@
-from .base_shcema import Base
+from .base_schema import Base
 
 
 class MensagemResposta(Base):
