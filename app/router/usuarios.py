@@ -10,11 +10,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.auth_usuarios import autenticar_usuario
 from app.database.models.usuario import Usuario as UsuarioORM
-from app.database.schemas.respostas_schema import ErroResposta
+from app.database.schemas.respostas_schema import ErroResposta, MensagemResposta
 from app.database.schemas.usuario_schema import (
     ListaUsuarioResposta,
     UsuarioInput,
     UsuarioResposta,
+    UsuarioUpdate,
 )
 from app.database.session import get_session
 from app.utils.security import hash_senha
@@ -59,11 +60,10 @@ async def criar_usuario(usuario_input: UsuarioInput, session: SessaoBanco):
     "/",
     summary="Listar Usuarios do sistema",
     response_model=ListaUsuarioResposta,
-    response_description="Lista das tarefas cadastradas",
+    response_description="Lista de usuários cadastrados",
     responses={
         404: {"model": ErroResposta, "description": "Nenhum usuário foi cadastrado"}
     },
-    tags=["Tarefa"],
 )
 async def list_users(
     session: SessaoBanco,
@@ -100,3 +100,92 @@ async def list_users(
     return ListaUsuarioResposta(
         page=page, limit=limit, tamanho=qtd_usuario, usuarios=usuarios_lista
     )
+
+
+@router.get(
+    "/{id_user}/",
+    summary="Listar dados de usuário",
+    response_model=UsuarioResposta,
+    responses={
+        404: {"model": ErroResposta, "description": "Usuário não foi encontrado"}
+    },
+)
+async def list_user(id_user: int, session: SessaoBanco, _: UsuarioAutenticacao):
+    usuario = await session.get(UsuarioORM, id_user)
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Não foi possível achar o usuario de id {id_user}.",
+        )
+    return UsuarioResposta.model_validate(usuario)
+
+
+@router.put(
+    "/{id_user}/",
+    summary="Atualiza os dados do usuário",
+    response_model=UsuarioResposta,
+    responses={
+        404: {"model": ErroResposta, "description": "Usuário não encontrado"},
+        409: {
+            "model": ErroResposta,
+            "description": "E-mail ou username já cadastrados",
+        },
+    },
+)
+async def put_dados_usuario(
+    id_usuario: int,
+    usuario_dados: UsuarioUpdate,
+    session: SessaoBanco,
+    _: UsuarioAutenticacao,
+):
+    usuario = await session.get(UsuarioORM, id_usuario)
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Usuário com id {id_usuario} não foi encontrado",
+        )
+    # Inpede que o usuario envie uma string vazia para algum dos dados
+    # dados_usuario_atualizado = usuario_dados.model_dump(exclude_unset=True, exclude={"password1", "password2"})
+    # for campo, valor in dados_usuario_atualizado.items():
+    #     setattr(usuario, campo, valor)
+
+    usuario.nome = usuario_dados.nome if usuario_dados.nome else usuario.nome
+    usuario.username = (
+        usuario_dados.username if usuario_dados.username else usuario.username
+    )
+    usuario.email = usuario_dados.email if usuario_dados.email else usuario.email
+    if usuario_dados.password1 is not None:
+        usuario.hashed_password = hash_senha(usuario_dados.password1.get_secret_value())
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="E-mail ou username já cadastrados",
+        )
+    await session.refresh(usuario)
+    return UsuarioResposta(
+        id=usuario.id, nome=usuario.nome, email=usuario.email, username=usuario.username
+    )
+
+
+@router.delete(
+    "/{id_user}/",
+    summary="Deletar usuário do sistema",
+    response_model=MensagemResposta,
+    responses={
+        404: {"model": ErroResposta, "description": "Usuário não foi encontrado"}
+    },
+)
+async def delete_user(id_user: int, session: SessaoBanco, _: UsuarioAutenticacao):
+    usuario = await session.get(UsuarioORM, id_user)
+    if not usuario:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Usuário de id {id_user} não foi localizado",
+        )
+    usernome = usuario.username
+    await session.delete(usuario)
+    await session.commit()
+    return MensagemResposta(message=f"Usuário {usernome} apagado com sucesso")

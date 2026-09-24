@@ -8,7 +8,7 @@ class Usuario(Base):
     __tablename__ = "usuarios"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    nome: Mapped[str] = mapped_column(String(25), index=True, nullable=False)
+    nome: Mapped[str] = mapped_column(String(25), index=True)
     email: Mapped[str] = mapped_column(
         String(50), nullable=False, unique=True, index=True
     )

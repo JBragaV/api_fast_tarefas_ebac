@@ -4,7 +4,7 @@ from .base_schema import Base
 
 
 class UsuarioBase(Base):
-    nome: str = Field(
+    nome: str | None = Field(
         min_length=10,
         max_length=25,
         examples=["Trujilo Vila Carvalho"],
@@ -47,6 +47,8 @@ class UsuarioBase(Base):
     @model_validator(mode="after")
     def preencher_username_padrao(self):
         if self.username is None:
+            if self.nome is None:
+                raise ValueError("É necessário informar o nome ou o username")
             username_padrao = self.nome.lower().replace(" ", "_")
             self.username = username_padrao[:15]
         return self

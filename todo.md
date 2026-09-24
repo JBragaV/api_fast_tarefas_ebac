@@ -3,22 +3,12 @@
     - [ ] Redis (Instalado)
     - [ ] Celery (Instalado)
     - [ ] Kafka (Instalado)
-    - [ ] Rotas Assincronas
-            - [X] Tarefa
-                - [X] Post
-                - [X] Get All
-                - [X] Get one
-                - [X] Put
-                - [X] Delete
-            - [ ] Usuário
-                - [X] Post
-                - [X] Get All
-                - [ ] Get one
-                - [ ] Put
-                - [ ] Delete
     - [ ] Testes
         - [ ] PyTest (Instalado)
         - [ ] PyTest Cov (Instalado)
-- [ ] Criar rotas em um arquivo separado
-    - [X] Tarefas
-    - [ ] Usuarios
+- [X] Criar rotas em um arquivo separado
+- [ ] JWT - Implementar no lugar de login senha.
+
+## Funcionalidades
+- [ ] Enviar E-mail quando o usuário terminar de cadastrar.
+- [ ]

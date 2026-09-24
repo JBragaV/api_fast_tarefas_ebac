@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
+from core.redis import invalidar_cache, redis_client
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBasicCredentials
 from sqlalchemy import func, select
@@ -46,7 +47,7 @@ async def add_tarefa(
     session.add(tarefa)
     await session.commit()
     await session.refresh(tarefa)
-
+    await invalidar_cache("tarefa")
     return TarefaResposta.model_validate(tarefa)
 
 
@@ -72,6 +73,11 @@ async def list_tarefas(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Page ou limit com valores inválidos",
         )
+
+    cache_key = f"tarefa:page={page}:limit={limit}:ordenacao={ordenacao}"
+    cache = await redis_client.get(cache_key)
+    if cache:
+        return ListaTarefasResposta.model_validate_json(cache)
 
     qtd_tarefas = await session.scalar(select(func.count()).select_from(TarefaORM)) or 0
 
@@ -122,8 +128,9 @@ async def put_tarefa_concluida(
         )
 
     tarefa.concluida = not tarefa.concluida
-    await session.flush()
+    await session.commit()
     await session.refresh(tarefa)
+    await invalidar_cache("tarefa")
     return TarefaResposta.model_validate(tarefa)
 
 
@@ -155,10 +162,9 @@ async def put_tarefa_dados(
 
     tarefa.nome = tarefa_dados.nome
     tarefa.descricao = tarefa_dados.descricao
-
-    await session.flush()
+    await session.commit()
     await session.refresh(tarefa)
-
+    await invalidar_cache("tarefa")
     return TarefaResposta.model_validate(tarefa)
 
 
@@ -187,5 +193,7 @@ async def delete_tarefa(
             detail=f"Tarefa com o id {id_tarefa} não foi encontrada!!!",
         )
     nome = tarefa.nome
+    await session.commit()
     await session.delete(tarefa)
+    await invalidar_cache("tarefa")
     return MensagemResposta(message=f"{nome} apagada com sucesso!!!")
