@@ -1,14 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Annotated
 
-from core.redis import invalidar_cache, redis_client
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBasicCredentials
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.auth_usuarios import autenticar_usuario
+from app.core.redis import invalidar_cache, redis_client
 from app.database.models.tarefa import Tarefa as TarefaORM
 from app.database.schemas.respostas_schema import ErroResposta, MensagemResposta
 from app.database.schemas.tarefa_schema import (
@@ -87,6 +88,7 @@ async def list_tarefas(
             detail="Nenhuma tarefa foi cadastrada ainda!!!",
         )
     query = select(TarefaORM)
+    await asyncio.sleep(10)
     if ordenacao:
         if ordenacao.lower() == "nome":
             print("NOME")
@@ -97,9 +99,13 @@ async def list_tarefas(
     query = query.offset(start).limit(limit)
     resultado = await session.scalars(query)
     tarfas_lista = [TarefaResposta.model_validate(t) for t in list(resultado.all())]
-    return ListaTarefasResposta(
+    resposta = ListaTarefasResposta(
         page=page, limit=limit, tamanho=qtd_tarefas, tarefas=tarfas_lista
     )
+    await redis_client.set(
+        cache_key, resposta.model_dump_json(), ex=30
+    )  # Tempo de expirar 5 minutos(300 segundos)
+    return resposta
 
 
 @router.put(

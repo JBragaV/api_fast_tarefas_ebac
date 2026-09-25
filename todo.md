@@ -1,8 +1,8 @@
 ## Road Map do projeto.
 - [ ] Implementar tudo que foi aprendido no curso nessa api.
-    - [ ] Redis (Instalado)
-    - [ ] Celery (Instalado)
-    - [ ] Kafka (Instalado)
+    - [X] Redis (Instalado)
+    - [X] Celery (Instalado)
+    - [X] Kafka (Instalado)
     - [ ] Testes
         - [ ] PyTest (Instalado)
         - [ ] PyTest Cov (Instalado)

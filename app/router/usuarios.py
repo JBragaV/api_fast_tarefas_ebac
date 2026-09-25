@@ -18,6 +18,8 @@ from app.database.schemas.usuario_schema import (
     UsuarioUpdate,
 )
 from app.database.session import get_session
+from app.messaging.kafka_producer import publicar_evento
+from app.tasks.email_tasks import task_envio_email_boas_vindas
 from app.utils.security import hash_senha
 from app.utils.utils import pagina_e_limite_sao_validos
 
@@ -53,6 +55,16 @@ async def criar_usuario(usuario_input: UsuarioInput, session: SessaoBanco):
             detail="E-mail ou username já cadastrados",
         )
     await session.refresh(novo_usuario)
+    task_envio_email_boas_vindas.delay(novo_usuario.nome, novo_usuario.email)
+    await publicar_evento(
+        "usuario.criado",
+        {
+            "id": novo_usuario.id,
+            "nome": novo_usuario.nome,
+            "username": novo_usuario.username,
+            "email": novo_usuario.email,
+        },
+    )
     return UsuarioResposta.model_validate(novo_usuario)
 
 

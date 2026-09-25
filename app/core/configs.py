@@ -10,3 +10,6 @@ class SysConfig:
     DATABASE_URL = "sqlite+aiosqlite:///./livraria_ebac.db"
     DEBUG = True
     REDIS = ""
+    CELETY_BROKER = "redis://localhost:6379/0"
+    CELETY_BACKEND = "redis://localhost:6379/1"
+    BOOTSTRAP_SERVER_KAFKA = "localhost:9092"

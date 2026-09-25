@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from app.database.models.base import Base
 from app.database.schemas.respostas_schema import MensagemResposta
 from app.database.session import engine
+from app.messaging.kafka_producer import iniciar_producer, parar_producer
 from app.router import tarefas, usuarios
 
 
@@ -16,7 +17,10 @@ from app.router import tarefas, usuarios
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    await iniciar_producer()
     yield
+    await parar_producer()
 
 
 # Variaveis globais
