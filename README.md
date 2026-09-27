@@ -41,6 +41,8 @@ PROJETO/
 │   │   └── auth_usuarios.py
 │   ├── core/
 │   │   ├── __init__.py
+│   │   ├── celery_app.py
+│   │   ├── redis.py
 │   │   └── configs.py        # Configurações do sistema (ex.: URL do banco)
 │   ├── database/
 │   │   ├── models/
@@ -57,10 +59,17 @@ PROJETO/
 │   │   │   └── usuario_schema.py
 │   │   ├── __init__.py
 │   │   └── session.py
+│   ├── database/
+│   │   ├── __init__.py
+│   │   ├── kafka_consumer.py
+│   │   └── kafka_producer.py
 │   ├── router
 │   │   ├── __init__.py
 │   │   ├── tarefas.py
 │   │   └── usuarios.py
+│   ├── tasks/
+│   │   ├── __init__.py
+│   │   └── email_tasks.py
 │   ├── tests
 │   │   ├── __init__.py
 │   ├── utils

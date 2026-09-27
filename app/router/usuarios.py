@@ -145,16 +145,16 @@ async def list_user(id_user: int, session: SessaoBanco, _: UsuarioAutenticacao):
     },
 )
 async def put_dados_usuario(
-    id_usuario: int,
+    id_user: int,
     usuario_dados: UsuarioUpdate,
     session: SessaoBanco,
     _: UsuarioAutenticacao,
 ):
-    usuario = await session.get(UsuarioORM, id_usuario)
+    usuario = await session.get(UsuarioORM, id_user)
     if not usuario:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Usuário com id {id_usuario} não foi encontrado",
+            detail=f"Usuário com id {id_user} não foi encontrado",
         )
     # Inpede que o usuario envie uma string vazia para algum dos dados
     # dados_usuario_atualizado = usuario_dados.model_dump(exclude_unset=True, exclude={"password1", "password2"})
