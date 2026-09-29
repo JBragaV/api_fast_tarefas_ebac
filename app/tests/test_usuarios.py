@@ -1,15 +1,17 @@
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
+from fastapi.testclient import TestClient
+
+from app.main import app
 
 USUARIOS_URL = "/users/"
 
 
 # TEST Rota POST
-@pytest.mark.asyncio
 @patch("app.router.usuarios.task_envio_email_boas_vindas.delay")  # Celery
 @patch("app.router.usuarios.publicar_evento")  # Kafka
-async def test_criar_usuario(mock_publicar, mock_task, client):
+def test_criar_usuario(mock_publicar, mock_task):
     payload = {
         "nome": "NUNUELA CAIADO",
         "email": "nunulinda@email.com.br",
@@ -17,13 +19,29 @@ async def test_criar_usuario(mock_publicar, mock_task, client):
         "password1": "Senha123",
         "password2": "Senha123",
     }
-    response = await client.post(USUARIOS_URL, json=payload)
-    assert response.status_code == 201
-    data = response.json()
-    assert data["nome"] == "NUNUELA CAIADO"
-    assert "password1" not in data
-    mock_task.assert_called_once()
-    mock_publicar.assert_called_once()
+    with (
+        patch("app.main.iniciar_producer", new_callable=AsyncMock),
+        patch("app.main.parar_producer", new_callable=AsyncMock),
+        TestClient(app) as client,
+    ):
+        response = client.post(USUARIOS_URL, json=payload)
+        assert response.status_code == 201
+        data = response.json()
+        assert data["nome"] == "NUNUELA CAIADO"
+        assert "password1" not in data
+        mock_task.assert_called_once_with(
+            payload["nome"],
+            payload["email"],
+        )
+        mock_publicar.assert_awaited_once_with(
+            "usuario.criado",
+            {
+                "id": data["id"],
+                "nome": payload["nome"],
+                "username": payload["username"],
+                "email": payload["email"],
+            },
+        )
 
 
 @pytest.mark.asyncio
@@ -138,7 +156,6 @@ async def test_atualizar_usuario_sucesso(client):
         patch("app.router.usuarios.publicar_evento"),
     ):
         usuario_criado = await client.post(USUARIOS_URL, json=payload)
-    print(usuario_criado.json())
     id_user = usuario_criado.json()["id"]
     response = await client.put(
         f"{USUARIOS_URL}{id_user}/", json={"nome": "Manuela Caiado"}

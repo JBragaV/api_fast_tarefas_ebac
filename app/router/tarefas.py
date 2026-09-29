@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -32,7 +31,7 @@ router = APIRouter(
 
 
 @router.post(
-    "/add/",
+    "/",
     response_model=TarefaResposta,
     summary="Cria uma tarefa nos registros",
     status_code=status.HTTP_201_CREATED,
@@ -75,11 +74,6 @@ async def list_tarefas(
             detail="Page ou limit com valores inválidos",
         )
 
-    cache_key = f"tarefa:page={page}:limit={limit}:ordenacao={ordenacao}"
-    cache = await redis_client.get(cache_key)
-    if cache:
-        return ListaTarefasResposta.model_validate_json(cache)
-
     qtd_tarefas = await session.scalar(select(func.count()).select_from(TarefaORM)) or 0
 
     if qtd_tarefas == 0:
@@ -87,8 +81,13 @@ async def list_tarefas(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Nenhuma tarefa foi cadastrada ainda!!!",
         )
+
+    cache_key = f"tarefa:page={page}:limit={limit}:ordenacao={ordenacao}"
+    cache = await redis_client.get(cache_key)
+    if cache:
+        return ListaTarefasResposta.model_validate_json(cache)
+
     query = select(TarefaORM)
-    await asyncio.sleep(10)
     if ordenacao:
         if ordenacao.lower() == "nome":
             print("NOME")
